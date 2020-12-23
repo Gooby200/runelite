@@ -170,6 +170,8 @@ public interface PlayerIndicatorsConfig extends Config
 	{
 		return false;
 	}
+	
+	
 
 	@ConfigItem(
 		position = 11,
@@ -212,6 +214,15 @@ public interface PlayerIndicatorsConfig extends Config
 	)
 	default boolean showFriendsChatRanks()
 	{
+		return true;
+	}
+	
+	@ConfigItem(
+		position = 15,
+		keyName = "otherNotification",
+		name = "Notify when other player appears",
+		description = "Sends a notification to the client whenever a player indicated as 'other' appears on the minimap")
+	default boolean otherNotification() {
 		return true;
 	}
 }
