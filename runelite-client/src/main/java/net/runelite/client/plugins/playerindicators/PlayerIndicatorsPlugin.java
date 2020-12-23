@@ -196,6 +196,7 @@ public class PlayerIndicatorsPlugin extends Plugin
 		else if (config.highlightOthers() && !player.isFriendsChatMember())
 		{
 			color = config.getOthersColor();
+			// send notification here to the client
 		}
 
 		if (image == -1 && color == null)
