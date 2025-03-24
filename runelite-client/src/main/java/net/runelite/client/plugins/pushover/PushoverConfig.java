@@ -43,6 +43,15 @@ public interface PushoverConfig extends Config {
 	}
 
 	@ConfigItem(
+			keyName = "notifyOnLogout",
+			name = "Notify on logout",
+			description = "Send notifications when you logout"
+	)
+	default boolean notifyOnLogout() {
+		return false;
+	}
+
+	@ConfigItem(
 			keyName = "spamPreventSeconds",
 			name = "Prevent Spam for X Seconds",
 			description = "Doesn't send another notification to prevent spam for specified seconds"

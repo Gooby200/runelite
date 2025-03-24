@@ -87,6 +87,9 @@ public class AIOFighterPlugin extends Plugin
 			scheduler.shutdownNow(); // Properly shutdown the scheduler to prevent lingering tasks
 			scheduler = null;
 		}
+
+		overlayManager.remove(overlay);
+
 		log.info("AIO Fighter stopped!");
 	}
 
