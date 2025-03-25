@@ -84,6 +84,7 @@ public class PushoverPlugin extends Plugin
 				.add("user", config.userKey())
 				.add("title", title)
 				.add("message", message)
+				.add("priority", config.messagePriority())
 				.build();
 
 		Request request = new Request.Builder()

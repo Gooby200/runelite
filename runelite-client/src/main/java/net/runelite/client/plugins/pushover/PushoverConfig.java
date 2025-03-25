@@ -59,4 +59,13 @@ public interface PushoverConfig extends Config {
 	default int spamPreventSeconds() {
 		return 120;
 	}
+
+	@ConfigItem(
+			keyName = "messagePriority",
+			name = "Message priority",
+			description = "Sets the message priority"
+	)
+	default String messagePriority() {
+		return "0";
+	}
 }
