@@ -43,6 +43,8 @@ public class AIOFighterPlugin extends Plugin
 	private OverlayManager overlayManager;
 	@Inject
 	private AIOFighterOverlay overlay;
+	@Inject
+	private AIOFighterMouseOverlay mouseOverlay;
 
 	private volatile boolean running = true;
 	private boolean lowHealth = false;
@@ -56,6 +58,7 @@ public class AIOFighterPlugin extends Plugin
 	private ScheduledExecutorService scheduler;
 	private Thread loopThread;
 	private Table<WorldPoint, Integer, GroundItem> collectedGroundItems = HashBasedTable.create();
+	Point mouseLocation = null;
 
 	@Override
 	protected void startUp() throws Exception {
@@ -67,6 +70,7 @@ public class AIOFighterPlugin extends Plugin
 		}
 
 		overlayManager.add(overlay);
+		overlayManager.add(mouseOverlay);
 
 		running = true;
 		scheduler = Executors.newSingleThreadScheduledExecutor(); // Create a single reusable scheduler
@@ -89,6 +93,7 @@ public class AIOFighterPlugin extends Plugin
 		}
 
 		overlayManager.remove(overlay);
+		overlayManager.remove(mouseOverlay);
 
 		log.info("AIO Fighter stopped!");
 	}
@@ -112,17 +117,13 @@ public class AIOFighterPlugin extends Plugin
 						if (config.shouldPickUpBigBones()) {
 							List<WorldPoint> boneLocations = new ArrayList<>();
 							for (var set : collectedGroundItems.cellSet()) {
-								if (set.getValue().getName().equalsIgnoreCase("big bones")) {
+								if (set.getValue().getName().toLowerCase().contains("big bones")) {
 									boneLocations.add(set.getRowKey());
 								}
 							}
 
 
-							int emptyInventoryCount = 0;
-							try {
-								emptyInventoryCount = getEmptyInventorySlotsClientThread();
-							} catch (Exception ex) {
-							}
+							int emptyInventoryCount = getEmptyInventorySlotsClientThread();
 
 							if (emptyInventoryCount == 0) {
 								// Check if we have bones in inventory to bury
@@ -145,7 +146,8 @@ public class AIOFighterPlugin extends Plugin
 								}
 
 							} else {
-								if (!boneLocations.isEmpty()) {
+								while (!boneLocations.isEmpty() && getEmptyInventorySlotsClientThread() > 0) {
+									System.out.println(1007);
 									//get the closest bone
 									int closestBoneIndex = 0;
 									try {
@@ -158,13 +160,42 @@ public class AIOFighterPlugin extends Plugin
 									} catch (Exception ex) { }
 
 									if (point != null) {
-										//pick up bone
-										sendMoveAndClick(point.getX(), point.getY());
+										sendMoveEvent(point.getX(), point.getY());
+										try {
+											Thread.sleep(getRandomBetween(100, 200));
+										} catch (Exception ex) { }
 
-										// Schedule the next step after 5 seconds (non-blocking)
+										// Check if left-click is "Take Big Bones"
+										String[] leftClickOption = getLeftClickOption();
+										//System.out.println(leftClickOption[0] + ", " + leftClickOption[1]);
+										if (leftClickOption == null || leftClickOption[0] == null || leftClickOption[1] == null || !leftClickOption[0].equalsIgnoreCase("take") || !leftClickOption[1].toLowerCase().contains("bones")) {
+											System.out.println("Left-click is not 'Take Big Bones'. Right-clicking...");
+											sendRightClick(point.getX(), point.getY());
+
+											try {
+												Thread.sleep(getRandomBetween(100, 200)); // Wait for menu
+											} catch (InterruptedException e) {
+											}
+
+//											Point menuOptionPoint = menuOptionCoordinates("take", "big bones");
+//											if (menuOptionPoint != null) {
+//												sendMoveAndClick(menuOptionPoint.getX(), menuOptionPoint.getY());
+//											}
+											clickMenuOption("take", "bones");
+										} else {
+											sendClickEvent(point.getX(), point.getY()); // Normal left-click pickup
+										}
+
 										try {
 											Thread.sleep(getRandomBetween(2000, 3000));
 										} catch (InterruptedException e) {
+										}
+									}
+
+									boneLocations = new ArrayList<>();
+									for (var set : collectedGroundItems.cellSet()) {
+										if (set.getValue().getName().toLowerCase().contains("big bones")) {
+											boneLocations.add(set.getRowKey());
 										}
 									}
 								}
@@ -173,15 +204,81 @@ public class AIOFighterPlugin extends Plugin
 
 						//find a goblin and send the coords
 						findAndKillNPCClientThread();
+						if (config.shouldPickUpBigBones()) {
+							try {
+								Thread.sleep(getRandomBetween(1200, 1500));
+							} catch (InterruptedException e) { }
+						}
 					}
 				}
 			}
 			latch.countDown();
 			try {
 				latch.await();
-				Thread.sleep(1000);
+				Thread.sleep(600);
 			} catch (InterruptedException e) { }
 		}
+	}
+
+	private String[] getLeftClickOption() {
+		CountDownLatch latch = new CountDownLatch(1);
+		final String[] result = new String[2];
+		clientThread.invokeLater(() -> {
+			MenuEntry[] menuEntries = client.getMenuEntries();
+			if (menuEntries.length > 0) {
+				result[0] = menuEntries[menuEntries.length - 1].getOption();
+				result[1] = menuEntries[menuEntries.length - 1].getTarget();
+			} else {
+				result[0] = null;
+			}
+
+			latch.countDown();
+		});
+		try {
+			latch.await();
+		} catch (InterruptedException e) { }
+		return result;
+	}
+
+	private void clickMenuOption(String option, String target) {
+		CountDownLatch latch = new CountDownLatch(1);
+		clientThread.invokeLater(() -> {
+			MenuEntry[] menuEntries = client.getMenuEntries();
+			for (MenuEntry entry : menuEntries) {
+				if (entry.getOption().equalsIgnoreCase(option) && entry.getTarget().toLowerCase().contains(target)) {
+					client.menuAction(
+							entry.getParam0(),
+							entry.getParam1(),
+							entry.getType(),
+							entry.getIdentifier(),
+							entry.getItemId(),
+							entry.getOption(),
+							entry.getTarget()
+					);
+					//client.setMenuEntries(new MenuEntry[]{});
+					break;
+				}
+			}
+			latch.countDown();
+		});
+		try {
+			latch.await();
+		} catch (InterruptedException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	public void sendRightClick(int x, int y) {
+		Canvas canvas = client.getCanvas();
+		java.awt.Point point = new java.awt.Point(x, y);
+		SwingUtilities.convertPointToScreen(point, canvas);
+
+		// Press right mouse button
+		canvas.dispatchEvent(new MouseEvent(canvas, MouseEvent.MOUSE_PRESSED, System.currentTimeMillis(), MouseEvent.BUTTON3_DOWN_MASK, x, y, point.x, point.y, 1, false, MouseEvent.BUTTON3));
+		// Release right mouse button
+		canvas.dispatchEvent(new MouseEvent(canvas, MouseEvent.MOUSE_RELEASED, System.currentTimeMillis(), 0, x, y, point.x, point.y, 1, false, MouseEvent.BUTTON3));
+		// Right-click event (some cases require this)
+		canvas.dispatchEvent(new MouseEvent(canvas, MouseEvent.MOUSE_CLICKED, System.currentTimeMillis(), 0, x, y, point.x, point.y, 1, false, MouseEvent.BUTTON3));
 	}
 
 	private void findAndKillNPCClientThread() {
@@ -322,7 +419,7 @@ public class AIOFighterPlugin extends Plugin
 		return points[0];
 	}
 
-	private int getEmptyInventorySlotsClientThread() throws InterruptedException {
+	private int getEmptyInventorySlotsClientThread() {
 		CountDownLatch latch = new CountDownLatch(1);
 		final int[] result = new int[1];
 
@@ -346,7 +443,9 @@ public class AIOFighterPlugin extends Plugin
 			latch.countDown();
 		});
 
-		latch.await();
+		try {
+			latch.await();
+		} catch (InterruptedException e) { }
 		return result[0];
 	}
 
@@ -543,6 +642,7 @@ public class AIOFighterPlugin extends Plugin
 		Canvas canvas = client.getCanvas();
 		java.awt.Point point = new java.awt.Point(x, y);
 		SwingUtilities.convertPointToScreen(point, canvas);
+		mouseLocation = new Point(x, y);
 		canvas.dispatchEvent(new MouseEvent(canvas, MouseEvent.MOUSE_MOVED, System.currentTimeMillis(), 0, x, y, point.x, point.y, 0, false, 0));
 	}
 
