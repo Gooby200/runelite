@@ -365,7 +365,6 @@ public class AIOFighterPlugin extends Plugin
 							entry.getTarget()
 					);
 					sendMoveEvent(0, 0);
-					//client.setMenuEntries(new MenuEntry[]{});
 					break;
 				}
 			}
