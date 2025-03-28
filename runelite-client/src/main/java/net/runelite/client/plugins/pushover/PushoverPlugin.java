@@ -48,7 +48,7 @@ public class PushoverPlugin extends Plugin
 		if (gameStateChanged.getGameState() == GameState.LOGIN_SCREEN)
 		{
 			if (config.notifyOnLogout()) {
-				sendPushoverNotification("Logout Notificatiom", "You have been logged out");
+				sendPushoverNotification("Logout Notification", "You have been logged out");
 			}
 		}
 	}

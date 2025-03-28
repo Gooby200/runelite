@@ -1,9 +1,12 @@
 package net.runelite.client.plugins.aiofighter;
 
+import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.Table;
 import com.google.inject.Provides;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Point;
 import net.runelite.api.*;
+import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetInfo;
@@ -22,10 +25,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.util.List;
 import java.util.*;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 @Slf4j
 @PluginDescriptor(
@@ -55,10 +55,10 @@ public class AIOFighterPlugin extends Plugin
 	public WorldPoint fightLocation = null;
 	private ScheduledExecutorService scheduler;
 	private Thread loopThread;
+	private Table<WorldPoint, Integer, GroundItem> collectedGroundItems = HashBasedTable.create();
 
 	@Override
-	protected void startUp() throws Exception
-	{
+	protected void startUp() throws Exception {
 		log.info("AIO Fighter started!");
 		setCameraPitch();
 
@@ -97,124 +97,368 @@ public class AIOFighterPlugin extends Plugin
 		while (running) {
 			CountDownLatch latch = new CountDownLatch(1);
 
-			clientThread.invokeLater(() -> {
-				if (client != null && running && !config.isPaused()) {
-					checkHealth();
-					checkInventory();
-					checkCombatStatus();
+			if (client != null && running && !config.isPaused()) {
+				checkBasicStats();
+				clickToContinue();
 
-					//make sure we hit click to continue if it exists
-					Widget clickToContinue = client.getWidget(15269891);
-					if (clickToContinue != null && clickToContinue.isHidden() == false) {
-						//System.out.println("test");
-						Point point = getRandomPointInBounds(clickToContinue.getBounds());
-						if (point != null) {
-							sendMoveAndClick(point.getX(), point.getY());
-						}
+				if (lowHealth) {
+					if (lowHealthLogic()) {
+						return;
 					}
-
-					if (lowHealth) {
-						if (!inCombat) {
-							Point logoutButtonLocation = getLogoutButtonLocation();
-							if (logoutButtonLocation != null) {
-								sendMoveAndClick(logoutButtonLocation.getX(), logoutButtonLocation.getY());
-								return;
-							}
-						}
-
-						//open inventory
-						if (isInventoryOpen()) {
-							Point point;
-							if (hasFood) {
-								point = getFoodLocation();
-							} else {
-								point = getXLocation();
-							}
-							if (point != null) {
-								//TCPClient.sendClick(client, point);
-								sendMoveAndClick(point.getX(), point.getY());
-							}
-						} else {
-							//send inventory tab coords
-							Widget inventoryTab = client.getWidget(WidgetInfo.INVENTORY.RESIZABLE_VIEWPORT_BOTTOM_LINE_INVENTORY_TAB);
-							// If it's null, try the fixed mode widget
-							if (inventoryTab == null) {
-								inventoryTab = client.getWidget(WidgetInfo.FIXED_VIEWPORT_INVENTORY_TAB);
-							}
-							if (inventoryTab != null) {
-								// Get the bounds of the inventory tab button
-								Point point = getRandomPointInBounds(inventoryTab.getBounds());
-								if (point != null) {
-									//TCPClient.sendClick(client, point);
-									sendMoveAndClick(point.getX(), point.getY());
-								}
-							}
-						}
+				} else {
+					if (inCombat || isPlayerInteracting()) {
+						//do nothing and keep attacking
 					} else {
-						if (inCombat || client.getLocalPlayer().isInteracting()) {
-							//do nothing and keep attacking
-						} else {
-							if (config.shouldPickUpBigBones()) {
-								//check for big bones on the ground
-								//if any exist, pick it up
-								//wait a second and check if we have it in our inventory and it no longer exists on the ground, if so, bury it
+						if (config.shouldPickUpBigBones()) {
+							List<WorldPoint> boneLocations = new ArrayList<>();
+							for (var set : collectedGroundItems.cellSet()) {
+								if (set.getValue().getName().equalsIgnoreCase("big bones")) {
+									boneLocations.add(set.getRowKey());
+								}
 							}
 
-							//find a goblin and send the coords
-							Point point = getNearestNPC();
-							if (point != null) {
-								//System.out.println(hoverAction);
-								//System.out.println(hoverNPC);
-								sendMoveEvent(point.getX(), point.getY());
 
-								if (scheduler == null || scheduler.isShutdown()) {
-									return; // Avoid running if the plugin is stopped
+							int emptyInventoryCount = 0;
+							try {
+								emptyInventoryCount = getEmptyInventorySlotsClientThread();
+							} catch (Exception ex) {
+							}
+
+							if (emptyInventoryCount == 0) {
+								// Check if we have bones in inventory to bury
+								//open inventory
+								Point boneInventoryLocation = null;
+								try {
+									boneInventoryLocation = getBigBoneInventoryLocationClientThread();
+								} catch (Exception ex) { }
+								while (boneInventoryLocation != null) {
+									sendMoveAndClick(boneInventoryLocation.getX(), boneInventoryLocation.getY());
+
+									//wait for the animation - 1200-2000 ms
+									try {
+										Thread.sleep(getRandomBetween(1200, 2000));
+									} catch (InterruptedException e) {
+									}
+
+									//check agian if we have any bones to bury
+									boneInventoryLocation = getBigBoneInventoryLocationClientThread();
 								}
 
-								scheduler.schedule(() -> {
-									clientThread.invokeLater(() -> { // Ensure game actions run on the client thread
-										MenuEntry[] menuEntries = client.getMenuEntries();
+							} else {
+								if (!boneLocations.isEmpty()) {
+									//get the closest bone
+									int closestBoneIndex = 0;
+									try {
+										closestBoneIndex = getClosestBone(boneLocations);
+									} catch (Exception ex) { }
 
-										if (menuEntries != null && menuEntries.length > 0) {
-											// Sort by MenuAction ID (smallest to largest)
-											Arrays.sort(menuEntries, Comparator.comparingInt(entry -> entry.getType().getId()));
+									Point point = null;
+									try {
+										point = getPointFromWorldPoint(boneLocations.get(closestBoneIndex));
+									} catch (Exception ex) { }
 
-											// Get the first menu entry after sorting
-											MenuEntry firstEntry = menuEntries[0];
+									if (point != null) {
+										//pick up bone
+										sendMoveAndClick(point.getX(), point.getY());
 
-											if (firstEntry.getTarget() != null && firstEntry.getOption() != null) {
-												hoverAction = firstEntry.getOption();
-												hoverNPC = firstEntry.getTarget();
-											} else {
-												hoverAction = null;
-												hoverNPC = null;
-											}
-										} else {
-											hoverAction = null;
-											hoverNPC = null;
+										// Schedule the next step after 5 seconds (non-blocking)
+										try {
+											Thread.sleep(getRandomBetween(2000, 3000));
+										} catch (InterruptedException e) {
 										}
-
-										if (hoverAction != null && hoverNPC != null) {
-											if (hoverAction.toLowerCase().contains("attack") && hoverNPC.toLowerCase().contains(config.npcName().toLowerCase())) {
-												sendClickEvent(point.getX(), point.getY());
-											}
-										}
-									});
-								}, 100, TimeUnit.MILLISECONDS);
+									}
+								}
 							}
 						}
+
+						//find a goblin and send the coords
+						findAndKillNPCClientThread();
 					}
 				}
-				latch.countDown(); // Signal loop to continue
-			});
-
+			}
+			latch.countDown();
 			try {
-				latch.await(); // Wait until clientThread task completes
-				Thread.sleep(1000); // Enforce 1-second gap before next iteration
-			} catch (InterruptedException e) {
-				Thread.currentThread().interrupt();
+				latch.await();
+				Thread.sleep(1000);
+			} catch (InterruptedException e) { }
+		}
+	}
+
+	private void findAndKillNPCClientThread() {
+		clientThread.invokeLater(() -> {
+			Point point = getNearestNPC();
+			if (point != null && client.getLocalPlayer().isInteracting() == false) {
+				//System.out.println(hoverAction);
+				//System.out.println(hoverNPC);
+				sendMoveEvent(point.getX(), point.getY());
+
+				if (scheduler == null || scheduler.isShutdown()) {
+					return; // Avoid running if the plugin is stopped
+				}
+
+				scheduler.schedule(() -> {
+					clientThread.invokeLater(() -> { // Ensure game actions run on the client thread
+						MenuEntry[] menuEntries = client.getMenuEntries();
+
+						if (menuEntries != null && menuEntries.length > 0) {
+							// Sort by MenuAction ID (smallest to largest)
+							Arrays.sort(menuEntries, Comparator.comparingInt(entry -> entry.getType().getId()));
+
+							// Get the first menu entry after sorting
+							MenuEntry firstEntry = menuEntries[0];
+
+							if (firstEntry.getTarget() != null && firstEntry.getOption() != null) {
+								hoverAction = firstEntry.getOption();
+								hoverNPC = firstEntry.getTarget();
+							} else {
+								hoverAction = null;
+								hoverNPC = null;
+							}
+						} else {
+							hoverAction = null;
+							hoverNPC = null;
+						}
+
+						if (hoverAction != null && hoverNPC != null) {
+							if (hoverAction.toLowerCase().contains("attack") && hoverNPC.toLowerCase().contains(config.npcName().toLowerCase())) {
+								sendClickEvent(point.getX(), point.getY());
+							}
+						}
+					});
+				}, 100, TimeUnit.MILLISECONDS);
+			}
+		});
+	}
+
+	private Point getPointFromWorldPoint(WorldPoint worldPoint) throws InterruptedException {
+		CountDownLatch latch = new CountDownLatch(1);
+		final Point[] result = new Point[1];
+
+		clientThread.invokeLater(() -> {
+			LocalPoint localPoint = LocalPoint.fromWorld(client, worldPoint);
+			if (localPoint != null) {
+				Point point = Perspective.localToCanvas(client, localPoint, worldPoint.getPlane());
+				if (point != null) {
+					result[0] = point;
+				} else {
+					result[0] = null;
+				}
+			} else {
+				result[0] = null;
+			}
+
+			latch.countDown();
+		});
+
+		latch.await();
+		return result[0];
+
+	}
+
+	private int getClosestBone(List<WorldPoint> boneLocations) throws InterruptedException {
+		//set acceptable world points here based on the fight location
+		acceptableWorldPoints.clear(); // Clear previous points
+		for (int x = fightLocation.getX() - config.fightDistanceX(); x <= fightLocation.getX() + config.fightDistanceX(); x++) {
+			for (int y = fightLocation.getY() - config.fightDistanceY(); y <= fightLocation.getY() + config.fightDistanceY(); y++) {
+				WorldPoint targetLocation = new WorldPoint(x, y, fightLocation.getPlane());
+				acceptableWorldPoints.add(targetLocation);
 			}
 		}
+
+		CountDownLatch latch = new CountDownLatch(1);
+		final int[] result = new int[1];
+		clientThread.invokeLater(() -> {
+			for (int i = 0; i < boneLocations.size(); i++) {
+				double distance = client.getLocalPlayer().getWorldLocation().distanceTo(boneLocations.get(i));
+				if (distance < client.getLocalPlayer().getWorldLocation().distanceTo(boneLocations.get(result[0]))) {
+					if (acceptableWorldPoints.contains(boneLocations.get(i))) {
+						result[0] = i;
+					}
+				}
+			}
+
+			latch.countDown();
+		});
+
+		latch.await();
+		return result[0];
+	}
+
+	public int getRandomBetween(int min, int max) {
+		return ThreadLocalRandom.current().nextInt(min, max + 1);
+	}
+
+	private Point getBigBoneInventoryLocationClientThread() {
+		final Point[] points = new Point[1];
+		CountDownLatch latch = new CountDownLatch(1);
+		clientThread.invokeLater(() -> {
+			Widget inventoryWidget = client.getWidget(WidgetInfo.INVENTORY);
+			if (inventoryWidget == null || inventoryWidget.getDynamicChildren() == null || inventoryWidget.isHidden()) {
+				points[0] = null;
+			} else {
+				boolean found = false;
+				for (Widget item : inventoryWidget.getDynamicChildren()) {
+					if (item != null && (item.getItemId() == 532 || item.getId() == 532)) {
+						points[0] = getRandomPointInBounds(item.getBounds());
+						found = true;
+						break;
+					}
+				}
+
+				if (!found) {
+					points[0] = null;
+				}
+
+			}
+
+			latch.countDown();
+		});
+
+		try {
+			latch.await();
+		} catch (InterruptedException e) {
+			throw new RuntimeException(e);
+		}
+		return points[0];
+	}
+
+	private int getEmptyInventorySlotsClientThread() throws InterruptedException {
+		CountDownLatch latch = new CountDownLatch(1);
+		final int[] result = new int[1];
+
+		clientThread.invokeLater(() -> {
+			ItemContainer inventory = client.getItemContainer(InventoryID.INVENTORY);
+			if (inventory == null) {
+				result[0] = 0;
+			} else {
+				int emptyCount = 0;
+				Item[] items = inventory.getItems();
+
+				for (int i = 0; i < 28; i++) {
+					if (i >= items.length || items[i] == null || items[i].getId() == -1) {
+						emptyCount++;
+					}
+				}
+
+				result[0] = emptyCount;
+			}
+
+			latch.countDown();
+		});
+
+		latch.await();
+		return result[0];
+	}
+
+	private void checkBasicStats() {
+		CountDownLatch latch = new CountDownLatch(1);
+		clientThread.invokeLater(() -> {
+			checkHealth();
+			checkInventory();
+			checkCombatStatus();
+
+			latch.countDown();
+		});
+
+		try {
+			latch.await();
+		} catch (InterruptedException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	private void clickToContinue() {
+		CountDownLatch latch = new CountDownLatch(1);
+		clientThread.invokeLater(() -> {
+			//make sure we hit click to continue if it exists
+			Widget clickToContinue = client.getWidget(15269891);
+			if (clickToContinue != null && clickToContinue.isHidden() == false) {
+				//System.out.println("test");
+				Point point = getRandomPointInBounds(clickToContinue.getBounds());
+				if (point != null) {
+					sendMoveAndClick(point.getX(), point.getY());
+				}
+			}
+
+			latch.countDown();
+		});
+
+		try {
+			latch.await();
+		} catch (InterruptedException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	private boolean lowHealthLogic() {
+		CountDownLatch latch = new CountDownLatch(1);
+		final boolean[] result = new boolean[1];
+		clientThread.invokeLater(() -> {
+			if (!inCombat) {
+				Point logoutButtonLocation = getLogoutButtonLocation();
+				if (logoutButtonLocation != null) {
+					sendMoveAndClick(logoutButtonLocation.getX(), logoutButtonLocation.getY());
+					return true;
+				}
+			}
+
+			//open inventory
+			if (isInventoryOpen()) {
+				Point point;
+				if (hasFood) {
+					point = getFoodLocation();
+				} else {
+					point = getXLocation();
+				}
+				if (point != null) {
+					//TCPClient.sendClick(client, point);
+					sendMoveAndClick(point.getX(), point.getY());
+				}
+			} else {
+				//send inventory tab coords
+				Widget inventoryTab = client.getWidget(WidgetInfo.INVENTORY.RESIZABLE_VIEWPORT_BOTTOM_LINE_INVENTORY_TAB);
+				// If it's null, try the fixed mode widget
+				if (inventoryTab == null) {
+					inventoryTab = client.getWidget(WidgetInfo.FIXED_VIEWPORT_INVENTORY_TAB);
+				}
+				if (inventoryTab != null) {
+					// Get the bounds of the inventory tab button
+					Point point = getRandomPointInBounds(inventoryTab.getBounds());
+					if (point != null) {
+						//TCPClient.sendClick(client, point);
+						sendMoveAndClick(point.getX(), point.getY());
+					}
+				}
+			}
+
+			latch.countDown();
+			return false;
+		});
+
+		try {
+			latch.await();
+		} catch (InterruptedException e) {
+			throw new RuntimeException(e);
+		}
+		return false;
+	}
+
+	private boolean isPlayerInteracting() {
+		CountDownLatch latch = new CountDownLatch(1);
+		final boolean[] result = new boolean[1];
+
+		clientThread.invokeLater(() -> {
+			result[0] = client.getLocalPlayer().isInteracting();
+
+			latch.countDown();
+		});
+
+		try {
+			latch.await();
+		} catch (InterruptedException e) {
+			throw new RuntimeException(e);
+		}
+		return result[0];
 	}
 
 	private Point getFoodLocation() {
