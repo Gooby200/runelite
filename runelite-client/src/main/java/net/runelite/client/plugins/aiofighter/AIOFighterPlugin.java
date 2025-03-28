@@ -8,13 +8,18 @@ import net.runelite.api.Point;
 import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.events.ItemDespawned;
+import net.runelite.api.events.ItemSpawned;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.game.ItemManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
+import net.runelite.client.util.RSTimeUnit;
 
 import javax.inject.Inject;
 import javax.swing.Timer;
@@ -23,6 +28,8 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.*;
@@ -45,6 +52,8 @@ public class AIOFighterPlugin extends Plugin
 	private AIOFighterOverlay overlay;
 	@Inject
 	private AIOFighterMouseOverlay mouseOverlay;
+	@Inject
+	private ItemManager itemManager;
 
 	private volatile boolean running = true;
 	private boolean lowHealth = false;
@@ -177,10 +186,6 @@ public class AIOFighterPlugin extends Plugin
 											} catch (InterruptedException e) {
 											}
 
-//											Point menuOptionPoint = menuOptionCoordinates("take", "big bones");
-//											if (menuOptionPoint != null) {
-//												sendMoveAndClick(menuOptionPoint.getX(), menuOptionPoint.getY());
-//											}
 											clickMenuOption("take", "bones");
 										} else {
 											sendClickEvent(point.getX(), point.getY()); // Normal left-click pickup
@@ -220,6 +225,110 @@ public class AIOFighterPlugin extends Plugin
 		}
 	}
 
+	private GroundItem buildGroundItem(final Tile tile, final TileItem item)
+	{
+		// Collect the data for the item
+		final int itemId = item.getId();
+		final ItemComposition itemComposition = itemManager.getItemComposition(itemId);
+		final int realItemId = itemComposition.getNote() != -1 ? itemComposition.getLinkedNoteId() : itemId;
+		final int alchPrice = itemComposition.getHaPrice();
+		final int despawnTime = item.getDespawnTime() - client.getTickCount();
+		final int visibleTime = item.getVisibleTime() - client.getTickCount();
+
+		final GroundItem groundItem = GroundItem.builder()
+				.id(itemId)
+				.location(tile.getWorldLocation())
+				.itemId(realItemId)
+				.quantity(item.getQuantity())
+				.name(itemComposition.getName())
+				.haPrice(alchPrice)
+				.height(tile.getItemLayer().getHeight())
+				.tradeable(itemComposition.isTradeable())
+				.ownership(item.getOwnership())
+				.isPrivate(item.isPrivate())
+				.spawnTime(Instant.now())
+				.stackable(itemComposition.isStackable())
+				.despawnTime(Duration.of(despawnTime, RSTimeUnit.GAME_TICKS))
+				.visibleTime(Duration.of(visibleTime, RSTimeUnit.GAME_TICKS))
+				.build();
+
+		// Update item price in case it is coins
+		if (realItemId == 995)
+		{
+			groundItem.setHaPrice(1);
+			groundItem.setGePrice(1);
+		}
+		else
+		{
+			groundItem.setGePrice(itemManager.getItemPrice(realItemId));
+		}
+
+		return groundItem;
+	}
+
+	@Subscribe
+	public void onItemSpawned(ItemSpawned itemSpawned)
+	{
+		if (acceptableWorldPoints.isEmpty()) {
+			//set acceptable world points here based on the fight location
+			acceptableWorldPoints.clear(); // Clear previous points
+			for (int x = fightLocation.getX() - config.fightDistanceX(); x <= fightLocation.getX() + config.fightDistanceX(); x++) {
+				for (int y = fightLocation.getY() - config.fightDistanceY(); y <= fightLocation.getY() + config.fightDistanceY(); y++) {
+					WorldPoint targetLocation = new WorldPoint(x, y, fightLocation.getPlane());
+					acceptableWorldPoints.add(targetLocation);
+				}
+			}
+		}
+
+
+		TileItem item = itemSpawned.getItem();
+		Tile tile = itemSpawned.getTile();
+
+		GroundItem groundItem = buildGroundItem(tile, item);
+		GroundItem existing = collectedGroundItems.get(tile.getWorldLocation(), item.getId());
+		if (existing != null)
+		{
+			existing.setQuantity(existing.getQuantity() + groundItem.getQuantity());
+			// The spawn time remains set at the oldest spawn
+			existing.reset();
+		}
+		else
+		{
+			if (acceptableWorldPoints.contains(tile.getWorldLocation())) {
+				collectedGroundItems.put(tile.getWorldLocation(), item.getId(), groundItem);
+			}
+		}
+	}
+
+	@Subscribe
+	public void onItemDespawned(ItemDespawned itemDespawned)
+	{
+		TileItem item = itemDespawned.getItem();
+		Tile tile = itemDespawned.getTile();
+
+		GroundItem groundItem = collectedGroundItems.get(tile.getWorldLocation(), item.getId());
+		if (groundItem == null)
+		{
+			return;
+		}
+
+		if (groundItem.getQuantity() <= item.getQuantity())
+		{
+			if (collectedGroundItems.contains(tile.getWorldLocation(), item.getId())) {
+				collectedGroundItems.remove(tile.getWorldLocation(), item.getId());
+			}
+		}
+		else
+		{
+			groundItem.setQuantity(groundItem.getQuantity() - item.getQuantity());
+			// When picking up an item when multiple stacks appear on the ground,
+			// it is not known which item is picked up, so we invalidate the spawn
+			// time
+			groundItem.setSpawnTime(null);
+			groundItem.reset();
+		}
+	}
+
 	private String[] getLeftClickOption() {
 		CountDownLatch latch = new CountDownLatch(1);
 		final String[] result = new String[2];
@@ -255,6 +364,7 @@ public class AIOFighterPlugin extends Plugin
 							entry.getOption(),
 							entry.getTarget()
 					);
+					sendMoveEvent(0, 0);
 					//client.setMenuEntries(new MenuEntry[]{});
 					break;
 				}
