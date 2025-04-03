@@ -141,7 +141,7 @@ public class AIOFighterPlugin extends Plugin
 								try {
 									boneInventoryLocation = getBigBoneInventoryLocationClientThread();
 								} catch (Exception ex) { }
-								while (boneInventoryLocation != null) {
+								while (boneInventoryLocation != null && running && !config.isPaused()) {
 									sendMoveAndClick(boneInventoryLocation.getX(), boneInventoryLocation.getY());
 
 									//wait for the animation - 1200-2000 ms
@@ -155,7 +155,7 @@ public class AIOFighterPlugin extends Plugin
 								}
 
 							} else {
-								while (!boneLocations.isEmpty() && getEmptyInventorySlotsClientThread() > 0) {
+								while (!boneLocations.isEmpty() && getEmptyInventorySlotsClientThread() > 0 && running && !config.isPaused()) {
 									System.out.println(1007);
 									//get the closest bone
 									int closestBoneIndex = 0;
@@ -186,7 +186,11 @@ public class AIOFighterPlugin extends Plugin
 											} catch (InterruptedException e) {
 											}
 
-											clickMenuOption("take", "bones");
+											if (hasMenuOption("take", "bones")) {
+												clickMenuOption("take", "bones");
+											}
+
+											sendMoveEvent(0, 0);
 										} else {
 											sendClickEvent(point.getX(), point.getY()); // Normal left-click pickup
 										}
@@ -375,6 +379,31 @@ public class AIOFighterPlugin extends Plugin
 		} catch (InterruptedException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	private boolean hasMenuOption(String option, String target) {
+		CountDownLatch latch = new CountDownLatch(1);
+		final Boolean[] result = new Boolean[1];
+		clientThread.invokeLater(() -> {
+			result[0] = false;
+			if (client.isMenuOpen()) {
+				MenuEntry[] menuEntries = client.getMenuEntries();
+				for (MenuEntry entry : menuEntries) {
+					if (entry.getOption().equalsIgnoreCase(option) && entry.getTarget().toLowerCase().contains(target)) {
+						result[0] = true;
+						break;
+					}
+				}
+			}
+			latch.countDown();
+		});
+		try {
+			latch.await();
+		} catch (InterruptedException e) {
+			throw new RuntimeException(e);
+		}
+
+		return result[0];
 	}
 
 	public void sendRightClick(int x, int y) {
@@ -815,7 +844,8 @@ public class AIOFighterPlugin extends Plugin
 		// Check if any NPC is targeting the player
 		List<NPC> npcs = client.getNpcs();
 		for (NPC npc : npcs) {
-			if (npc.getInteracting() != null && npc.getInteracting().equals(player)) {
+			//if the npc is attacking me and i'm attacking it
+			if (npc.getInteracting() != null && npc.getInteracting().equals(player) && player.getInteracting().equals(npc)) {
 				inCombat = true;
 				return;
 			}
