@@ -111,20 +111,26 @@ public class AIOFighterPlugin extends Plugin
 	private void loop() {
 		while (running) {
 			CountDownLatch latch = new CountDownLatch(1);
-
+			System.out.println(1);
 			if (client != null && running && !config.isPaused()) {
 				checkBasicStats();
 				clickToContinue();
-
+				System.out.println(2);
 				if (lowHealth) {
+					System.out.println(3);
 					if (lowHealthLogic()) {
+						System.out.println(4);
 						return;
 					}
 				} else {
+					System.out.println(5);
 					if (inCombat || isPlayerInteracting()) {
+						System.out.println(6);
 						//do nothing and keep attacking
 					} else {
+						System.out.println(7);
 						if (config.shouldPickUpBigBones()) {
+							System.out.println(8);
 							List<WorldPoint> boneLocations = new ArrayList<>();
 							for (var set : collectedGroundItems.cellSet()) {
 								if (set.getValue().getName().toLowerCase().contains("big bones")) {
@@ -136,6 +142,7 @@ public class AIOFighterPlugin extends Plugin
 							int emptyInventoryCount = getEmptyInventorySlotsClientThread();
 
 							if (emptyInventoryCount == 0) {
+								System.out.println(9);
 								// Check if we have bones in inventory to bury
 								//open inventory
 								Point boneInventoryLocation = null;
@@ -143,6 +150,7 @@ public class AIOFighterPlugin extends Plugin
 									boneInventoryLocation = getBigBoneInventoryLocationClientThread();
 								} catch (Exception ex) { }
 								while (boneInventoryLocation != null && running && !config.isPaused()) {
+									System.out.println(10);
 									sendMoveAndClick(boneInventoryLocation.getX(), boneInventoryLocation.getY());
 
 									//wait for the animation - 1200-2000 ms
@@ -156,8 +164,9 @@ public class AIOFighterPlugin extends Plugin
 								}
 
 							} else {
+								System.out.println(11);
 								while (!boneLocations.isEmpty() && getEmptyInventorySlotsClientThread() > 0 && running && !config.isPaused()) {
-									System.out.println(1007);
+									System.out.println(12);
 									//get the closest bone
 									int closestBoneIndex = 0;
 									try {
@@ -170,6 +179,7 @@ public class AIOFighterPlugin extends Plugin
 									} catch (Exception ex) { }
 
 									if (point != null) {
+										System.out.println(13);
 										sendMoveEvent(point.getX(), point.getY());
 										try {
 											Thread.sleep(getRandomBetween(100, 200));
@@ -179,6 +189,7 @@ public class AIOFighterPlugin extends Plugin
 										String[] leftClickOption = getLeftClickOption();
 										//System.out.println(leftClickOption[0] + ", " + leftClickOption[1]);
 										if (leftClickOption == null || leftClickOption[0] == null || leftClickOption[1] == null || !leftClickOption[0].equalsIgnoreCase("take") || !leftClickOption[1].toLowerCase().contains("bones")) {
+											System.out.println(14);
 											System.out.println("Left-click is not 'Take Big Bones'. Right-clicking...");
 											sendRightClick(point.getX(), point.getY());
 
@@ -188,11 +199,13 @@ public class AIOFighterPlugin extends Plugin
 											}
 
 											if (hasMenuOption("take", "bones")) {
+												System.out.println(15);
 												clickMenuOption("take", "bones");
 											}
 
 											sendMoveEvent(0, 0);
 										} else {
+											System.out.println(16);
 											sendClickEvent(point.getX(), point.getY()); // Normal left-click pickup
 										}
 
@@ -215,6 +228,7 @@ public class AIOFighterPlugin extends Plugin
 						//find a goblin and send the coords
 						findAndKillNPCClientThread();
 						if (config.shouldPickUpBigBones()) {
+							System.out.println(17);
 							try {
 								Thread.sleep(getRandomBetween(1200, 1500));
 							} catch (InterruptedException e) { }
@@ -225,7 +239,7 @@ public class AIOFighterPlugin extends Plugin
 			latch.countDown();
 			try {
 				latch.await();
-				Thread.sleep(600);
+				Thread.sleep(getRandomBetween(900, 1500));
 			} catch (InterruptedException e) { }
 		}
 	}
@@ -319,9 +333,7 @@ public class AIOFighterPlugin extends Plugin
 
 		if (groundItem.getQuantity() <= item.getQuantity())
 		{
-			if (collectedGroundItems.contains(tile.getWorldLocation(), item.getId())) {
-				collectedGroundItems.remove(tile.getWorldLocation(), item.getId());
-			}
+			collectedGroundItems.remove(tile.getWorldLocation(), item.getId());
 		}
 		else
 		{
@@ -846,7 +858,7 @@ public class AIOFighterPlugin extends Plugin
 		List<NPC> npcs = client.getNpcs();
 		for (NPC npc : npcs) {
 			//if the npc is attacking me and i'm attacking it
-			if (npc.getInteracting() != null && npc.getInteracting().equals(player) && player.getInteracting().equals(npc)) {
+			if (npc.getInteracting() != null && npc.getInteracting().equals(player) && player != null && player.getInteracting() != null && player.getInteracting().equals(npc)) {
 				inCombat = true;
 				return;
 			}

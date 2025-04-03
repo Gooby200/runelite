@@ -18,7 +18,8 @@ import java.io.IOException;
 
 @Slf4j
 @PluginDescriptor(
-	name = "Pushover Notification"
+		name = "Pushover Notification",
+		enabledByDefault = false
 )
 public class PushoverPlugin extends Plugin
 {
