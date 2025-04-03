@@ -622,6 +622,9 @@ public class AIOFighterPlugin extends Plugin
 		clientThread.invokeLater(() -> {
 			//make sure we hit click to continue if it exists
 			Widget clickToContinue = client.getWidget(15269891);
+			if (clickToContinue == null)
+				clickToContinue = client.getWidget(12648448);
+
 			if (clickToContinue != null && clickToContinue.isHidden() == false) {
 				//System.out.println("test");
 				Point point = getRandomPointInBounds(clickToContinue.getBounds());
@@ -648,41 +651,45 @@ public class AIOFighterPlugin extends Plugin
 				Point logoutButtonLocation = getLogoutButtonLocation();
 				if (logoutButtonLocation != null) {
 					sendMoveAndClick(logoutButtonLocation.getX(), logoutButtonLocation.getY());
-					return true;
+					result[0] = true;
 				}
 			}
 
-			//open inventory
-			if (isInventoryOpen()) {
-				Point point;
-				if (hasFood) {
-					point = getFoodLocation();
-				} else {
-					point = getXLocation();
-				}
-				if (point != null) {
-					//TCPClient.sendClick(client, point);
-					sendMoveAndClick(point.getX(), point.getY());
-				}
-			} else {
-				//send inventory tab coords
-				Widget inventoryTab = client.getWidget(WidgetInfo.INVENTORY.RESIZABLE_VIEWPORT_BOTTOM_LINE_INVENTORY_TAB);
-				// If it's null, try the fixed mode widget
-				if (inventoryTab == null) {
-					inventoryTab = client.getWidget(WidgetInfo.FIXED_VIEWPORT_INVENTORY_TAB);
-				}
-				if (inventoryTab != null) {
-					// Get the bounds of the inventory tab button
-					Point point = getRandomPointInBounds(inventoryTab.getBounds());
+			if (result[0] != true) {
+				//open inventory
+				if (isInventoryOpen()) {
+					Point point;
+					if (hasFood) {
+						point = getFoodLocation();
+					} else {
+						point = getXLocation();
+					}
 					if (point != null) {
 						//TCPClient.sendClick(client, point);
 						sendMoveAndClick(point.getX(), point.getY());
 					}
+				} else {
+					//send inventory tab coords
+					Widget inventoryTab = client.getWidget(WidgetInfo.INVENTORY.RESIZABLE_VIEWPORT_BOTTOM_LINE_INVENTORY_TAB);
+					// If it's null, try the fixed mode widget
+					if (inventoryTab == null) {
+						inventoryTab = client.getWidget(WidgetInfo.FIXED_VIEWPORT_INVENTORY_TAB);
+					}
+					if (inventoryTab != null) {
+						// Get the bounds of the inventory tab button
+						Point point = getRandomPointInBounds(inventoryTab.getBounds());
+						if (point != null) {
+							//TCPClient.sendClick(client, point);
+							sendMoveAndClick(point.getX(), point.getY());
+						}
+					}
 				}
 			}
 
+			if (result[0] != true)
+				result[0] = false;
+
 			latch.countDown();
-			return false;
 		});
 
 		try {
@@ -690,7 +697,7 @@ public class AIOFighterPlugin extends Plugin
 		} catch (InterruptedException e) {
 			throw new RuntimeException(e);
 		}
-		return false;
+		return result[0];
 	}
 
 	private boolean isPlayerInteracting() {
@@ -883,7 +890,7 @@ public class AIOFighterPlugin extends Plugin
 	private void checkHealth() {
 		int currentHp = client.getBoostedSkillLevel(Skill.HITPOINTS);
 		int maxHp = client.getRealSkillLevel(Skill.HITPOINTS);
-		lowHealth = currentHp <= (maxHp * (config.eatPercentage() / 100));
+		lowHealth = currentHp <= (maxHp * ((double)config.eatPercentage() / 100));
 	}
 
 	public void setCameraPitch() {
