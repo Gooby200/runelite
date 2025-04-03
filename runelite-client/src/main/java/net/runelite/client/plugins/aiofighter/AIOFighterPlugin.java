@@ -36,7 +36,8 @@ import java.util.concurrent.*;
 
 @Slf4j
 @PluginDescriptor(
-	name = "AIO Fighter"
+		name = "AIO Fighter",
+		enabledByDefault = false
 )
 public class AIOFighterPlugin extends Plugin
 {
