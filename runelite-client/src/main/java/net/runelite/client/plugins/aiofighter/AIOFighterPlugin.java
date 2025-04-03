@@ -624,6 +624,8 @@ public class AIOFighterPlugin extends Plugin
 			Widget clickToContinue = client.getWidget(15269891);
 			if (clickToContinue == null)
 				clickToContinue = client.getWidget(12648448);
+			if (clickToContinue == null)
+				clickToContinue = client.getWidget(720900);
 
 			if (clickToContinue != null && clickToContinue.isHidden() == false) {
 				//System.out.println("test");
