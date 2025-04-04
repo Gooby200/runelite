@@ -222,8 +222,12 @@ public class XpTrackerPlugin extends Plugin
 			// Don't submit xptrack unless xp threshold is reached
 			if (Math.abs(totalXp - lastXp) > XP_THRESHOLD)
 			{
-				xpClient.update(username);
-				lastXp = totalXp;
+				try {
+					xpClient.update(username);
+					lastXp = totalXp;
+				} catch (Exception ex) {
+					//swallow exception
+				}
 			}
 		}
 	}
