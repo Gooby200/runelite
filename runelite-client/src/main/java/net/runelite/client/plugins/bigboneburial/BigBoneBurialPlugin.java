@@ -17,7 +17,10 @@ import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.input.MouseManager;
+import net.runelite.client.plugins.aiofighter.AIOFighterMouseOverlay;
+import net.runelite.client.plugins.aiofighter.AIOFighterOverlay;
 import net.runelite.client.plugins.bigboneburial.BigBoneBurialConfig;
+import net.runelite.client.ui.overlay.OverlayManager;
 
 import javax.inject.Inject;
 import javax.swing.*;
@@ -49,16 +52,22 @@ public class BigBoneBurialPlugin extends Plugin
     Point mouseLocation = null;
     private static final Random random = new Random();
     private long nextActionTime = System.currentTimeMillis();
+    @Inject
+    private OverlayManager overlayManager;
+    @Inject
+    private BigBoneBurialMouseOverlay mouseOverlay;
 
     @Override
     protected void startUp()
     {
+        overlayManager.add(mouseOverlay);
         log.info("Big Bone Burial plugin started!");
     }
 
     @Override
     protected void shutDown()
     {
+        overlayManager.remove(mouseOverlay);
         log.info("Big Bone Burial plugin stopped!");
     }
 
