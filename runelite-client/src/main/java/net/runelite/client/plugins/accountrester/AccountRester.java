@@ -22,12 +22,12 @@ import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
 
+@Slf4j
 @PluginDescriptor(
         name = "Account Rester",
-        description = "Rests your account by logging back in",
-        tags = {"external", "google", "integration"}
+        enabledByDefault = false,
+        description = "Rests your account by logging back in"
 )
-@Slf4j
 public class AccountRester extends Plugin {
     @Inject
     private Client client;
