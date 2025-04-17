@@ -51,7 +51,7 @@ public class AccountRester extends Plugin {
                     //perform action to log back in
                     if (canLogin == null) {
                         System.out.println(2);
-                        canLogin = System.currentTimeMillis() + 10000; //+ getRandomBetween(15000, 180000);
+                        canLogin = System.currentTimeMillis() + getRandomBetween(15000, 180000);
                     }
 
                     try {
