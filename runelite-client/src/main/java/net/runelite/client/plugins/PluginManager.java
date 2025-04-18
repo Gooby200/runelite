@@ -506,7 +506,7 @@ public class PluginManager
 		final PluginDescriptor pluginDescriptor = plugin.getClass().getAnnotation(PluginDescriptor.class);
 		final String keyName = Strings.isNullOrEmpty(pluginDescriptor.configName()) ? plugin.getClass().getSimpleName() : pluginDescriptor.configName();
 		final String value = configManager.getConfiguration(RuneLiteConfig.GROUP_NAME, keyName.toLowerCase());
-		if (pluginDescriptor.enabledByDefault() == false && Arrays.stream(pluginDescriptor.tags()).anyMatch(t -> t == "Gaston")) {
+		if (Arrays.asList(pluginDescriptor.tags()).contains("Gaston")) {
 			return false;
 		}
 		return value != null ? Boolean.parseBoolean(value) : pluginDescriptor.enabledByDefault();
