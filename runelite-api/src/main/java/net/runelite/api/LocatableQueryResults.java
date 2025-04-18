@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Adam <Adam@sigterm.info>
+ * Copyright (c) 2019, tha23rd <https://https://github.com/tha23rd>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,30 +24,24 @@
  */
 package net.runelite.api;
 
-import java.awt.Shape;
+import javax.annotation.Nullable;
+import java.util.Collection;
+import java.util.Comparator;
 
-/**
- * Represents an object on the ground of a tile.
- */
-public interface GroundObject extends TileObject, Locatable
+public class LocatableQueryResults<EntityType extends Locatable> extends QueryResults<EntityType>
 {
-	Renderable getRenderable();
 
-	/**
-	 * Gets the convex hull of the objects model.
-	 *
-	 * @return the convex hull
-	 * @see net.runelite.api.model.Jarvis
-	 */
-	Shape getConvexHull();
+	public LocatableQueryResults(Collection<? extends EntityType> results)
+	{
+		super(results);
+	}
 
-	/**
-	 * A bitfield containing various flags:
-	 * <pre>{@code
-	 * object type id = bits & 0x20
-	 * orientation (0-3) = bits >>> 6 & 3
-	 * supports items = bits >>> 8 & 1
-	 * }</pre>
-	 */
-	int getConfig();
+	@Nullable
+	public EntityType nearestTo(Locatable locatable)
+	{
+		return this.stream()
+				.min(Comparator.comparing(entityType -> entityType.getLocalLocation().distanceTo(locatable.getLocalLocation())))
+				.orElse(null);
+	}
+
 }

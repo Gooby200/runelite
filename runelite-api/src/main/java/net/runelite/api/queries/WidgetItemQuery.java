@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Adam <Adam@sigterm.info>
+ * Copyright (c) 2017, Devin French <https://github.com/devinfrench>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -22,32 +22,64 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package net.runelite.api;
+package net.runelite.api.queries;
 
-import java.awt.Shape;
+import net.runelite.api.Query;
+import net.runelite.api.QueryResults;
+import net.runelite.api.widgets.WidgetItem;
 
-/**
- * Represents an object on the ground of a tile.
- */
-public interface GroundObject extends TileObject, Locatable
+import java.util.Collection;
+import java.util.function.Predicate;
+
+public abstract class WidgetItemQuery extends Query<WidgetItem, WidgetItemQuery, QueryResults<WidgetItem>>
 {
-	Renderable getRenderable();
+	public WidgetItemQuery idEquals(int... ids)
+	{
+		predicate = and(item ->
+		{
+			for (int id : ids)
+			{
+				if (item.getId() == id)
+				{
+					return true;
+				}
+			}
+			return false;
+		});
+		return this;
+	}
 
-	/**
-	 * Gets the convex hull of the objects model.
-	 *
-	 * @return the convex hull
-	 * @see net.runelite.api.model.Jarvis
-	 */
-	Shape getConvexHull();
+	public WidgetItemQuery idEquals(Collection<Integer> ids)
+	{
+		predicate = and((object) -> ids.contains(object.getId()));
+		return this;
+	}
 
-	/**
-	 * A bitfield containing various flags:
-	 * <pre>{@code
-	 * object type id = bits & 0x20
-	 * orientation (0-3) = bits >>> 6 & 3
-	 * supports items = bits >>> 8 & 1
-	 * }</pre>
-	 */
-	int getConfig();
+	public WidgetItemQuery indexEquals(int... indexes)
+	{
+		predicate = and(item ->
+		{
+			for (int index : indexes)
+			{
+				if (item.getWidget().getIndex() == index)
+				{
+					return true;
+				}
+			}
+			return false;
+		});
+		return this;
+	}
+
+	public WidgetItemQuery quantityEquals(int quantity)
+	{
+		predicate = and(item -> item.getQuantity() == quantity);
+		return this;
+	}
+
+	public WidgetItemQuery filter(Predicate<WidgetItem> other)
+	{
+		predicate = and(other);
+		return this;
+	}
 }

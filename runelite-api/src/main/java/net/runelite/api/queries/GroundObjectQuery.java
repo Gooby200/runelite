@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Adam <Adam@sigterm.info>
+ * Copyright (c) 2017, Devin French <https://github.com/devinfrench>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -22,32 +22,37 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package net.runelite.api;
+package net.runelite.api.queries;
 
-import java.awt.Shape;
+import net.runelite.api.Client;
+import net.runelite.api.GroundObject;
+import net.runelite.api.LocatableQueryResults;
+import net.runelite.api.Tile;
 
-/**
- * Represents an object on the ground of a tile.
- */
-public interface GroundObject extends TileObject, Locatable
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+public class GroundObjectQuery extends TileObjectQuery<GroundObject, GroundObjectQuery>
 {
-	Renderable getRenderable();
+	@Override
+	public LocatableQueryResults<GroundObject> result(Client client)
+	{
+		return new LocatableQueryResults<>(getGroundObjects(client).stream()
+			.filter(Objects::nonNull)
+			.filter(predicate)
+			.distinct()
+			.collect(Collectors.toList()));
+	}
 
-	/**
-	 * Gets the convex hull of the objects model.
-	 *
-	 * @return the convex hull
-	 * @see net.runelite.api.model.Jarvis
-	 */
-	Shape getConvexHull();
-
-	/**
-	 * A bitfield containing various flags:
-	 * <pre>{@code
-	 * object type id = bits & 0x20
-	 * orientation (0-3) = bits >>> 6 & 3
-	 * supports items = bits >>> 8 & 1
-	 * }</pre>
-	 */
-	int getConfig();
+	private Collection<GroundObject> getGroundObjects(Client client)
+	{
+		Collection<GroundObject> objects = new ArrayList<>();
+		for (Tile tile : getTiles(client))
+		{
+			objects.add(tile.getGroundObject());
+		}
+		return objects;
+	}
 }

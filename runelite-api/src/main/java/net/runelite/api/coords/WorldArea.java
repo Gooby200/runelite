@@ -89,6 +89,16 @@ public class WorldArea
 		this.height = height;
 	}
 
+	public WorldArea(WorldPoint swLocation, WorldPoint neLocation)
+	{
+		this.x = swLocation.getX();
+		this.y = swLocation.getY();
+		this.plane = swLocation.getPlane();
+		this.width = neLocation.getX() - swLocation.getX();
+		this.height = neLocation.getY() - swLocation.getY();
+	}
+
+
 	/**
 	 * Computes the shortest distance to another area.
 	 *
@@ -290,33 +300,33 @@ public class WorldArea
 		{
 			xFlags |= CollisionDataFlag.BLOCK_MOVEMENT_EAST;
 			xWallFlagsSouth |= CollisionDataFlag.BLOCK_MOVEMENT_SOUTH |
-				CollisionDataFlag.BLOCK_MOVEMENT_SOUTH_EAST;
+					CollisionDataFlag.BLOCK_MOVEMENT_SOUTH_EAST;
 			xWallFlagsNorth |= CollisionDataFlag.BLOCK_MOVEMENT_NORTH |
-				CollisionDataFlag.BLOCK_MOVEMENT_NORTH_EAST;
+					CollisionDataFlag.BLOCK_MOVEMENT_NORTH_EAST;
 		}
 		if (dx > 0)
 		{
 			xFlags |= CollisionDataFlag.BLOCK_MOVEMENT_WEST;
 			xWallFlagsSouth |= CollisionDataFlag.BLOCK_MOVEMENT_SOUTH |
-				CollisionDataFlag.BLOCK_MOVEMENT_SOUTH_WEST;
+					CollisionDataFlag.BLOCK_MOVEMENT_SOUTH_WEST;
 			xWallFlagsNorth |= CollisionDataFlag.BLOCK_MOVEMENT_NORTH |
-				CollisionDataFlag.BLOCK_MOVEMENT_NORTH_WEST;
+					CollisionDataFlag.BLOCK_MOVEMENT_NORTH_WEST;
 		}
 		if (dy < 0)
 		{
 			yFlags |= CollisionDataFlag.BLOCK_MOVEMENT_NORTH;
 			yWallFlagsWest |= CollisionDataFlag.BLOCK_MOVEMENT_WEST |
-				CollisionDataFlag.BLOCK_MOVEMENT_NORTH_WEST;
+					CollisionDataFlag.BLOCK_MOVEMENT_NORTH_WEST;
 			yWallFlagsEast |= CollisionDataFlag.BLOCK_MOVEMENT_EAST |
-				CollisionDataFlag.BLOCK_MOVEMENT_NORTH_EAST;
+					CollisionDataFlag.BLOCK_MOVEMENT_NORTH_EAST;
 		}
 		if (dy > 0)
 		{
 			yFlags |= CollisionDataFlag.BLOCK_MOVEMENT_SOUTH;
 			yWallFlagsWest |= CollisionDataFlag.BLOCK_MOVEMENT_WEST |
-				CollisionDataFlag.BLOCK_MOVEMENT_SOUTH_WEST;
+					CollisionDataFlag.BLOCK_MOVEMENT_SOUTH_WEST;
 			yWallFlagsEast |= CollisionDataFlag.BLOCK_MOVEMENT_EAST |
-				CollisionDataFlag.BLOCK_MOVEMENT_SOUTH_EAST;
+					CollisionDataFlag.BLOCK_MOVEMENT_SOUTH_EAST;
 		}
 		if (dx < 0 && dy < 0)
 		{
@@ -349,7 +359,7 @@ public class WorldArea
 			for (int y = startY; y <= endY; y++)
 			{
 				if ((collisionDataFlags[checkX][y] & xFlags) != 0 ||
-					!extraCondition.test(WorldPoint.fromScene(wv, checkX, y, plane)))
+						!extraCondition.test(WorldPoint.fromScene(wv, checkX, y, plane)))
 				{
 					// Collision while attempting to travel along the x axis
 					return false;
@@ -380,7 +390,7 @@ public class WorldArea
 			for (int x = startX; x <= endX; x++)
 			{
 				if ((collisionDataFlags[x][checkY] & yFlags) != 0 ||
-					!extraCondition.test(WorldPoint.fromScene(wv, x, checkY, wv.getPlane())))
+						!extraCondition.test(WorldPoint.fromScene(wv, x, checkY, wv.getPlane())))
 				{
 					// Collision while attempting to travel along the y axis
 					return false;
@@ -408,7 +418,7 @@ public class WorldArea
 		if (dx != 0 && dy != 0)
 		{
 			if ((collisionDataFlags[checkX][checkY] & xyFlags) != 0 ||
-				!extraCondition.test(WorldPoint.fromScene(wv, checkX, checkY, wv.getPlane())))
+					!extraCondition.test(WorldPoint.fromScene(wv, checkX, checkY, wv.getPlane())))
 			{
 				// Collision while attempting to travel diagonally
 				return false;
@@ -420,7 +430,7 @@ public class WorldArea
 			if (width == 1)
 			{
 				if ((collisionDataFlags[checkX][checkY - dy] & xFlags) != 0 &&
-					extraCondition.test(WorldPoint.fromScene(wv, checkX, startY, wv.getPlane())))
+						extraCondition.test(WorldPoint.fromScene(wv, checkX, startY, wv.getPlane())))
 				{
 					return false;
 				}
@@ -428,7 +438,7 @@ public class WorldArea
 			if (height == 1)
 			{
 				if ((collisionDataFlags[checkX - dx][checkY] & yFlags) != 0 &&
-					extraCondition.test(WorldPoint.fromScene(wv, startX, checkY, wv.getPlane())))
+						extraCondition.test(WorldPoint.fromScene(wv, startX, checkY, wv.getPlane())))
 				{
 					return false;
 				}
@@ -659,14 +669,14 @@ public class WorldArea
 	{
 		Point compPoint = this.getComparisonPoint(other);
 		Comparator<WorldPoint> byDistance = Comparator.comparingInt((p) -> p.distanceTo(
-			new WorldPoint(compPoint.getX(), compPoint.getY(), this.getPlane())));
+				new WorldPoint(compPoint.getX(), compPoint.getY(), this.getPlane())));
 
 		return other.toWorldPointList()
-			.stream()
-			.filter(p -> isEdgePoint(other, p))
-			.filter(p -> isVisibleCandidate(other, p))
-			.sorted(byDistance)
-			.collect(Collectors.toList());
+				.stream()
+				.filter(p -> isEdgePoint(other, p))
+				.filter(p -> isVisibleCandidate(other, p))
+				.sorted(byDistance)
+				.collect(Collectors.toList());
 	}
 
 	/**
@@ -678,9 +688,9 @@ public class WorldArea
 	private static boolean isEdgePoint(WorldArea wa, WorldPoint p)
 	{
 		return p.getX() == wa.getX()
-			|| p.getX() == wa.getX() + wa.getWidth() - 1
-			|| p.getY() == wa.getY()
-			|| p.getY() == wa.getY() + wa.getHeight() - 1;
+				|| p.getX() == wa.getX() + wa.getWidth() - 1
+				|| p.getY() == wa.getY()
+				|| p.getY() == wa.getY() + wa.getHeight() - 1;
 	}
 
 	/**

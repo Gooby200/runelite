@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Adam <Adam@sigterm.info>
+ * Copyright (c) 2016-2018, Adam <Adam@sigterm.info>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -22,32 +22,47 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package net.runelite.api;
+package net.runelite.api.queries;
 
-import java.awt.Shape;
+import lombok.RequiredArgsConstructor;
+import net.runelite.api.*;
 
-/**
- * Represents an object on the ground of a tile.
- */
-public interface GroundObject extends TileObject, Locatable
+import java.util.Arrays;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+@RequiredArgsConstructor
+public class InventoryItemQuery extends Query<Item, InventoryItemQuery, QueryResults<Item>>
 {
-	Renderable getRenderable();
+	private final InventoryID inventory;
 
-	/**
-	 * Gets the convex hull of the objects model.
-	 *
-	 * @return the convex hull
-	 * @see net.runelite.api.model.Jarvis
-	 */
-	Shape getConvexHull();
+	@Override
+	public QueryResults<Item> result(Client client)
+	{
+		ItemContainer container = client.getItemContainer(inventory);
+		if (container == null)
+		{
+			return new QueryResults<>(null);
+		}
+		return new QueryResults<>(Arrays.stream(container.getItems())
+			.filter(Objects::nonNull)
+			.filter(predicate)
+			.collect(Collectors.toList()));
+	}
 
-	/**
-	 * A bitfield containing various flags:
-	 * <pre>{@code
-	 * object type id = bits & 0x20
-	 * orientation (0-3) = bits >>> 6 & 3
-	 * supports items = bits >>> 8 & 1
-	 * }</pre>
-	 */
-	int getConfig();
+	public InventoryItemQuery idEquals(int... ids)
+	{
+		predicate = and(item ->
+		{
+			for (int id : ids)
+			{
+				if (item.getId() == id)
+				{
+					return true;
+				}
+			}
+			return false;
+		});
+		return this;
+	}
 }

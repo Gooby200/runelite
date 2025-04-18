@@ -230,6 +230,8 @@ public interface Client extends OAuthApi, GameEngine
 	 */
 	int getCameraX();
 
+	int getCameraX2();
+	int getCameraY2();
 	/**
 	 * Floating point camera position, x-axis
 	 * @see #getCameraX()

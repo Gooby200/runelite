@@ -105,6 +105,10 @@ public interface MenuEntry
 	 */
 	Consumer<MenuEntry> onClick();
 
+	MenuEntry setParent(MenuEntry parent);
+
+	MenuEntry getParent();
+
 	/**
 	 * Test if this menu entry is an item op. "Use" and "Examine" are not considered item ops.
 	 * @return

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Adam <Adam@sigterm.info>
+ * Copyright (c) 2017, Devin French <https://github.com/devinfrench>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,30 +24,44 @@
  */
 package net.runelite.api;
 
-import java.awt.Shape;
+import java.util.function.Predicate;
 
 /**
- * Represents an object on the ground of a tile.
+ * A query to search the game for objects that match.
+ *
+ * @param <EntityType> the returned object type
+ * @param <QueryType>  the query type
  */
-public interface GroundObject extends TileObject, Locatable
+public abstract class Query<EntityType, QueryType, QR extends QueryResults>
 {
-	Renderable getRenderable();
+	protected Predicate<EntityType> predicate = x -> true;
+
+	protected Query()
+	{
+	}
 
 	/**
-	 * Gets the convex hull of the objects model.
+	 * Executes the query and filters through possible objects, returning only
+	 * those who evaluate true using {@link #predicate}.
 	 *
-	 * @return the convex hull
-	 * @see net.runelite.api.model.Jarvis
+	 * @param client the game client
+	 * @return the matching objects
 	 */
-	Shape getConvexHull();
+	public abstract QR result(Client client);
 
 	/**
-	 * A bitfield containing various flags:
-	 * <pre>{@code
-	 * object type id = bits & 0x20
-	 * orientation (0-3) = bits >>> 6 & 3
-	 * supports items = bits >>> 8 & 1
-	 * }</pre>
+	 * Constructs and returns a predicate that will evaluate {@link #predicate}
+	 * and the passed value.
+	 *
+	 * @param other the passed predicate
+	 * @return the combined predicate
 	 */
-	int getConfig();
+	protected Predicate<EntityType> and(Predicate<EntityType> other)
+	{
+		if (predicate == null)
+		{
+			return other;
+		}
+		return predicate.and(other);
+	}
 }

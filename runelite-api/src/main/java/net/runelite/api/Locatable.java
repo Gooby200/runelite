@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Adam <Adam@sigterm.info>
+ * Copyright (c) 2019, tha23rd <https://https://github.com/tha23rd>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,30 +24,25 @@
  */
 package net.runelite.api;
 
-import java.awt.Shape;
+import net.runelite.api.coords.LocalPoint;
+import net.runelite.api.coords.WorldPoint;
 
-/**
- * Represents an object on the ground of a tile.
- */
-public interface GroundObject extends TileObject, Locatable
+public interface Locatable
 {
-	Renderable getRenderable();
+    /**
+     * Gets the server-side location of the actor.
+     * <p>
+     * This value is typically ahead of where the client renders and is not
+     * affected by things such as animations.
+     *
+     * @return the server location
+     */
+    WorldPoint getWorldLocation();
 
-	/**
-	 * Gets the convex hull of the objects model.
-	 *
-	 * @return the convex hull
-	 * @see net.runelite.api.model.Jarvis
-	 */
-	Shape getConvexHull();
-
-	/**
-	 * A bitfield containing various flags:
-	 * <pre>{@code
-	 * object type id = bits & 0x20
-	 * orientation (0-3) = bits >>> 6 & 3
-	 * supports items = bits >>> 8 & 1
-	 * }</pre>
-	 */
-	int getConfig();
+    /**
+     * Gets the client-side location of the actor.
+     *
+     * @return the client location
+     */
+    LocalPoint getLocalLocation();
 }
