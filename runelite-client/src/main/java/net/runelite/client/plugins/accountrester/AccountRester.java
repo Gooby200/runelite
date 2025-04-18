@@ -26,7 +26,8 @@ import java.util.concurrent.ThreadLocalRandom;
 @PluginDescriptor(
         name = "Account Rester",
         enabledByDefault = false,
-        description = "Rests your account by logging back in"
+        description = "Rests your account by logging back in",
+        tags = {"Gaston"}
 )
 public class AccountRester extends Plugin {
     @Inject

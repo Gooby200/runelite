@@ -36,7 +36,9 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @PluginDescriptor(
-        name = "Big Bone Burial"
+        name = "Big Bone Burial",
+        enabledByDefault = false,
+        tags = {"Gaston"}
 )
 public class BigBoneBurialPlugin extends Plugin
 {
