@@ -3,6 +3,7 @@ package net.runelite.client.plugins.splasher;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.NPC;
+import net.runelite.api.Player;
 import net.runelite.api.events.GameTick;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.eventbus.Subscribe;
@@ -12,6 +13,7 @@ import net.runelite.client.plugins.Utils.Core;
 import net.runelite.client.plugins.Utils.Walking;
 
 import javax.inject.Inject;
+import java.util.concurrent.Executors;
 
 @PluginDescriptor(
         name = "Splasher",
@@ -23,29 +25,45 @@ public class SplasherPlugin extends Plugin {
     @Inject Client client;
     @Inject ClientThread clientThread;
     @Inject Core core;
-    @Inject Walking walking;
+    private Long timeUntilNextClick = null;
+    private long afkTimer = System.currentTimeMillis();
 
     @Subscribe
     public void onGameTick(GameTick tick) {
-        //if we are not interacting or our 20 minute timer is up, we should click
-        if (!core.isInteracting()) {
-            findAndClickSeagull(null);
-        } else if (core.isInteracting()) { //if we are interacting and our 20 minute timer is up, click on the npc that is interacting with us
-            NPC seagull = (NPC)client.getLocalPlayer().getInteracting();
-            findAndClickSeagull(seagull);
+        Player player = client.getLocalPlayer();
+        if (System.currentTimeMillis() >= afkTimer || !player.isInteracting() || (player.getAnimation() == -1 && player.getInteracting() == null)) {
+            System.out.println(1);
+            if (timeUntilNextClick == null)
+                timeUntilNextClick = System.currentTimeMillis() + core.getRandomIntBetweenRange(0, 2 * 60000);
+        }
+
+        if (timeUntilNextClick != null && System.currentTimeMillis() >= timeUntilNextClick) {
+            timeUntilNextClick = null;
+            findAndClickSeagull();
         }
     }
 
-    private void findAndClickSeagull(NPC seagull) {
-        if (seagull == null) {
-            seagull = core.findNearestNpc("Seagull");
+    private void findAndClickSeagull() {
+        Player player = client.getLocalPlayer();
+        NPC seagull = core.findNearestNpc("Seagull");
+        System.out.println(3);
+        if (player.isInteracting() && player.getInteracting().getName() == "Seagull") {
+            seagull = (NPC)player.getInteracting();
+            System.out.println(4);
         }
 
         if (seagull != null) {
+            System.out.println(5);
             //if the seagull isn't interacting or the seagull is already interacting with us, that's the one we want
             //otherwise its attacking someone else
-            if (!seagull.isInteracting() || seagull.getInteracting() == client.getLocalPlayer()) {
-                core.attackNPCDirect(seagull);
+            if (!seagull.isInteracting() || seagull.getInteracting() == client.getLocalPlayer()) { //maybe if this isn't true, find the next closest seagull?
+                System.out.println(6);
+                NPC finalSeagull = seagull;
+                Executors.newSingleThreadExecutor().submit(() -> {
+                    core.attackNPCDirect(finalSeagull);
+                });
+                //core.attackNPCDirect(finalSeagull);
+                afkTimer = System.currentTimeMillis() + (20 * 60000);
             }
         }
     }

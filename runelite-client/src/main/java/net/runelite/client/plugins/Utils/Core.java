@@ -191,6 +191,7 @@ public class Core extends Plugin
 		mouseEvent(MouseEvent.MOUSE_ENTERED, point, false);
 		mouseEvent(MouseEvent.MOUSE_EXITED, point, false);
 		mouseEvent(MouseEvent.MOUSE_MOVED, point, false);
+		sleep(getRandomIntBetweenRange(100, 500));
 		mouseEvent(MouseEvent.MOUSE_PRESSED, point, false);
 		mouseEvent(MouseEvent.MOUSE_RELEASED, point, false);
 		mouseEvent(MouseEvent.MOUSE_CLICKED, point, false);
