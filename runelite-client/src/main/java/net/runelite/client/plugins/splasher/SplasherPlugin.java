@@ -38,8 +38,14 @@ public class SplasherPlugin extends Plugin {
         }
 
         if (timeUntilNextClick != null && System.currentTimeMillis() >= timeUntilNextClick) {
-            timeUntilNextClick = null;
             findAndClickSeagull();
+
+            //check to see if we're attacking or not because if we missclick, we don't want to wait a whole 2 minutes
+            if (System.currentTimeMillis() >= afkTimer || !player.isInteracting() || (player.getAnimation() == -1 && player.getInteracting() == null)) {
+                timeUntilNextClick = System.currentTimeMillis() + core.getRandomIntBetweenRange(0, 10000);
+            } else {
+                timeUntilNextClick = null;
+            }
         }
     }
 
