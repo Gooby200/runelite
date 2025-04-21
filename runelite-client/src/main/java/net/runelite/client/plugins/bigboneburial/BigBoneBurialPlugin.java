@@ -19,7 +19,6 @@ import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.input.MouseManager;
 import net.runelite.client.plugins.aiofighter.AIOFighterMouseOverlay;
 import net.runelite.client.plugins.aiofighter.AIOFighterOverlay;
-import net.runelite.client.plugins.bigboneburial.BigBoneBurialConfig;
 import net.runelite.client.ui.overlay.OverlayManager;
 
 import javax.inject.Inject;
@@ -344,11 +343,5 @@ public class BigBoneBurialPlugin extends Plugin
                 }
             }
         }
-    }
-
-    @Provides
-    BigBoneBurialConfig provideConfig(ConfigManager configManager)
-    {
-        return configManager.getConfig(BigBoneBurialConfig.class);
     }
 }

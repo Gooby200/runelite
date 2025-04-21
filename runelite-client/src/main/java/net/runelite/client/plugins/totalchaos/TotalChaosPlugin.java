@@ -13,7 +13,8 @@ import java.util.concurrent.ThreadLocalRandom;
 
 @Slf4j
 @PluginDescriptor(
-        name = "Total Chaos"
+        name = "Total Chaos",
+        enabledByDefault = false
 )
 public class TotalChaosPlugin extends Plugin {
     @Inject

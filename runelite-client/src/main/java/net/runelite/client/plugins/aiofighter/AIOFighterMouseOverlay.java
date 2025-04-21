@@ -18,8 +18,6 @@ public class AIOFighterMouseOverlay extends Overlay {
     private final AIOFighterPlugin plugin;
     private final Client client;
     @Inject
-    private AIOFighterConfig config;
-    @Inject
     public AIOFighterMouseOverlay(AIOFighterPlugin plugin, Client client) {
         this.plugin = plugin;
         this.client = client;

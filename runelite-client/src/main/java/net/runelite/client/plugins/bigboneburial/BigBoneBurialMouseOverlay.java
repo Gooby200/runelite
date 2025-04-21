@@ -14,8 +14,7 @@ import java.awt.geom.Ellipse2D;
 public class BigBoneBurialMouseOverlay extends Overlay {
     private final BigBoneBurialPlugin plugin;
     private final Client client;
-    @Inject
-    private AIOFighterConfig config;
+
     @Inject
     public BigBoneBurialMouseOverlay(BigBoneBurialPlugin plugin, Client client) {
         this.plugin = plugin;

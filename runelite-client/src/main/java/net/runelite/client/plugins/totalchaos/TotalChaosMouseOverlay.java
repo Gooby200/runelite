@@ -13,8 +13,6 @@ public class TotalChaosMouseOverlay extends Overlay {
     private final TotalChaosPlugin plugin;
     private final Client client;
     @Inject
-    private TotalChaosConfig config;
-    @Inject
     public TotalChaosMouseOverlay(TotalChaosPlugin plugin, Client client) {
         this.plugin = plugin;
         this.client = client;
