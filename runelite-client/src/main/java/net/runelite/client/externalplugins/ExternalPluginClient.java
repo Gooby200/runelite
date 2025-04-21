@@ -95,7 +95,9 @@ public class ExternalPluginClient
 			.addPathSegment("manifest")
 			.addPathSegment(RuneLiteProperties.getPluginHubVersion() + "_" + name + ".js")
 			.build();
-		try (Response res = okHttpClient.newCall(new Request.Builder().url(manifest).build()).execute())
+		System.out.println(manifest);
+
+		try (Response res = okHttpClient.newCall(new Request.Builder().url("https://repo.runelite.net/plugins/manifest/1.11.6.1_full.js").build()).execute())
 		{
 			if (res.code() != 200)
 			{
