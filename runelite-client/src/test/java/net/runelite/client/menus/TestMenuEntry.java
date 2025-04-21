@@ -197,6 +197,16 @@ public class TestMenuEntry implements MenuEntry
 	}
 
 	@Override
+	public MenuEntry setParent(MenuEntry parent) {
+		return this;
+	}
+
+	@Override
+	public MenuEntry getParent() {
+		return null;
+	}
+
+	@Override
 	public boolean isItemOp()
 	{
 		return itemOp != -1;
