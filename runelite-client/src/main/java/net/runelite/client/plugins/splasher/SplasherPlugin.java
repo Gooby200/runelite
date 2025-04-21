@@ -17,7 +17,7 @@ import java.util.concurrent.Executors;
 
 @PluginDescriptor(
         name = "Splasher",
-        tags = {"Gaston"},
+        tags = {"gaston"},
         enabledByDefault = false
 )
 @Slf4j
@@ -35,6 +35,8 @@ public class SplasherPlugin extends Plugin {
             System.out.println(1);
             if (timeUntilNextClick == null)
                 timeUntilNextClick = System.currentTimeMillis() + core.getRandomIntBetweenRange(0, 2 * 60000);
+        } else {
+            timeUntilNextClick = null;
         }
 
         if (timeUntilNextClick != null && System.currentTimeMillis() >= timeUntilNextClick) {

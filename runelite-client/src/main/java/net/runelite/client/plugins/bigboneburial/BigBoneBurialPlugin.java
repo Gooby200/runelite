@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
 @PluginDescriptor(
         name = "Big Bone Burial",
         enabledByDefault = false,
-        tags = {"Gaston"}
+        tags = {"gaston"}
 )
 public class BigBoneBurialPlugin extends Plugin
 {

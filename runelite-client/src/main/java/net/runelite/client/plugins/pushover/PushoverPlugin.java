@@ -20,7 +20,7 @@ import java.io.IOException;
 @PluginDescriptor(
 		name = "Pushover Notification",
 		enabledByDefault = false,
-		tags = {"Gaston"}
+		tags = {"gaston"}
 )
 public class PushoverPlugin extends Plugin
 {

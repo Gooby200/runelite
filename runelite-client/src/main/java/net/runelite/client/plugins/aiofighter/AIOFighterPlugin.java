@@ -38,7 +38,7 @@ import java.util.concurrent.*;
 @PluginDescriptor(
 		name = "AIO Fighter",
 		enabledByDefault = false,
-		tags = {"Gaston"}
+		tags = {"gaston"}
 )
 public class AIOFighterPlugin extends Plugin
 {

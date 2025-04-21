@@ -216,13 +216,13 @@ public class PluginManager
 				PluginDescriptor descriptor = plugin.getClass().getAnnotation(PluginDescriptor.class);
 				if (descriptor != null && descriptor.tags().length > 0) {
 					for (String tag : descriptor.tags()) {
-						if (tag.equalsIgnoreCase("Gaston")) {
+						if (tag.equalsIgnoreCase("gaston")) {
 							String key = (descriptor.configName() == null || descriptor.configName().isEmpty())
 									? plugin.getClass().getSimpleName()
 									: descriptor.configName();
 							key = key.toLowerCase();
 
-							log.debug("Disabling Gaston plugin on startup: {}", key);
+							log.debug("Disabling gaston plugin on startup: {}", key);
 							configManager.unsetConfiguration(RuneLiteConfig.GROUP_NAME, key);
 						}
 					}
@@ -523,9 +523,6 @@ public class PluginManager
 		final PluginDescriptor pluginDescriptor = plugin.getClass().getAnnotation(PluginDescriptor.class);
 		final String keyName = Strings.isNullOrEmpty(pluginDescriptor.configName()) ? plugin.getClass().getSimpleName() : pluginDescriptor.configName();
 		final String value = configManager.getConfiguration(RuneLiteConfig.GROUP_NAME, keyName.toLowerCase());
-		if (Arrays.asList(pluginDescriptor.tags()).contains("Gaston")) {
-			//return false;
-		}
 		return value != null ? Boolean.parseBoolean(value) : pluginDescriptor.enabledByDefault();
 	}
 
