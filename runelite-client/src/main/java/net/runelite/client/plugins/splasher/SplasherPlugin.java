@@ -18,12 +18,12 @@ import java.util.concurrent.Executors;
 @PluginDescriptor(
         name = "Splasher",
         tags = {"gaston"},
+        description = "Start near seagulls with everything equipped and auto cast/retaliate on",
         enabledByDefault = false
 )
 @Slf4j
 public class SplasherPlugin extends Plugin {
     @Inject Client client;
-    @Inject ClientThread clientThread;
     @Inject Core core;
     private Long timeUntilNextClick = null;
     private long afkTimer = System.currentTimeMillis();
