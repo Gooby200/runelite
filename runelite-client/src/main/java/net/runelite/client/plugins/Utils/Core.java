@@ -2574,7 +2574,21 @@ get all Inventory items
 				walking.walkTileOnScreen(findNearestNpc(npc).getWorldLocation());
 			}
 			else
-			doInvoke(targetMenu, findNearestNpc(npc).getConvexHull().getBounds());
+				doInvoke(targetMenu, findNearestNpc(npc).getConvexHull().getBounds());
+		} catch (Exception e) {
+			System.out.println(e.getMessage());
+			e.printStackTrace();
+		}
+	}
+
+	public void tradeNPC(NPC npc){
+		try {
+			targetMenu = new NewMenuEntry("", "", npc.getIndex(), MenuAction.NPC_SECOND_OPTION.getId(), 0, 0, false);
+			if (npc.getConvexHull() == null) {
+				walking.walkTileOnScreen(npc.getWorldLocation());
+			}
+			else
+				doInvoke(targetMenu, npc.getConvexHull().getBounds());
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
 			e.printStackTrace();
