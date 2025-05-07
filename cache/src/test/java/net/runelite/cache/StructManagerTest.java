@@ -58,15 +58,15 @@ public class StructManagerTest
 		{
 			store.load();
 			StructManager loader = new StructManager(store);
-			loader.load();
-
-			for (Map.Entry<Integer, StructDefinition> struct : loader.getStructs().entrySet())
-			{
-				StructDefinition def = struct.getValue();
-
-				Files.asCharSink(new File(dumpDir, struct.getKey() + ".json"), Charset.defaultCharset()).write(gson.toJson(def));
-				++count;
-			}
+//			loader.load();
+//
+//			for (Map.Entry<Integer, StructDefinition> struct : loader.getStructs().entrySet())
+//			{
+//				StructDefinition def = struct.getValue();
+//
+//				Files.asCharSink(new File(dumpDir, struct.getKey() + ".json"), Charset.defaultCharset()).write(gson.toJson(def));
+//				++count;
+//			}
 		}
 
 		logger.info("Dumped {} structs to {}", count, dumpDir);

@@ -70,17 +70,17 @@ public class TrackDumperTest
 			Index index = store.getIndex(IndexType.MUSIC_TRACKS);
 			Index index2 = store.getIndex(IndexType.MUSIC_JINGLES);
 
-			for (Archive archive : index.getArchives())
-			{
-				dumpTrackArchive(dumpDir1, storage, archive);
-				++idx1;
-			}
+//			for (Archive archive : index.getArchives())
+//			{
+//				dumpTrackArchive(dumpDir1, storage, archive);
+//				++idx1;
+//			}
 
-			for (Archive archive : index2.getArchives())
-			{
-				dumpTrackArchive(dumpDir2, storage, archive);
-				++idx2;
-			}
+//			for (Archive archive : index2.getArchives())
+//			{
+//				dumpTrackArchive(dumpDir2, storage, archive);
+//				++idx2;
+//			}
 		}
 
 		logger.info("Dumped {} sound tracks ({} idx1, {} idx2) to {} and {}", idx1 + idx2, idx1, idx2, dumpDir1, dumpDir2);

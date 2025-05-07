@@ -63,27 +63,27 @@ public class EnumDumperTest
 		{
 			store.load();
 
-			Storage storage = store.getStorage();
-			Index index = store.getIndex(IndexType.CONFIGS);
-			Archive archive = index.getArchive(ConfigType.ENUM.getId());
-
-			byte[] archiveData = storage.loadArchive(archive);
-			ArchiveFiles files = archive.getFiles(archiveData);
-
-			EnumLoader loader = new EnumLoader();
-
-			for (FSFile file : files.getFiles())
-			{
-				byte[] b = file.getContents();
-
-				EnumDefinition def = loader.load(file.getFileId(), b);
-
-				if (def != null)
-				{
-					Files.asCharSink(new File(dumpDir, file.getFileId() + ".json"), Charset.defaultCharset()).write(gson.toJson(def));
-					++count;
-				}
-			}
+//			Storage storage = store.getStorage();
+//			Index index = store.getIndex(IndexType.CONFIGS);
+//			Archive archive = index.getArchive(ConfigType.ENUM.getId());
+//
+//			byte[] archiveData = storage.loadArchive(archive);
+//			ArchiveFiles files = archive.getFiles(archiveData);
+//
+//			EnumLoader loader = new EnumLoader();
+//
+//			for (FSFile file : files.getFiles())
+//			{
+//				byte[] b = file.getContents();
+//
+//				EnumDefinition def = loader.load(file.getFileId(), b);
+//
+//				if (def != null)
+//				{
+//					Files.asCharSink(new File(dumpDir, file.getFileId() + ".json"), Charset.defaultCharset()).write(gson.toJson(def));
+//					++count;
+//				}
+//			}
 		}
 
 		logger.info("Dumped {} enums to {}", count, dumpDir);

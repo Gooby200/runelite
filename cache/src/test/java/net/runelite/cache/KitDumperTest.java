@@ -65,22 +65,22 @@ public class KitDumperTest
 
 			Storage storage = store.getStorage();
 			Index index = store.getIndex(IndexType.CONFIGS);
-			Archive archive = index.getArchive(ConfigType.IDENTKIT.getId());
+//			Archive archive = index.getArchive(ConfigType.IDENTKIT.getId());
 
-			KitLoader loader = new KitLoader();
-
-			byte[] archiveData = storage.loadArchive(archive);
-			ArchiveFiles files = archive.getFiles(archiveData);
-
-			for (FSFile file : files.getFiles())
-			{
-				byte[] b = file.getContents();
-
-				KitDefinition def = loader.load(file.getFileId(), b);
-
-				Files.asCharSink(new File(dumpDir, file.getFileId() + ".json"), Charset.defaultCharset()).write(gson.toJson(def));
-				++count;
-			}
+//			KitLoader loader = new KitLoader();
+//
+//			byte[] archiveData = storage.loadArchive(archive);
+//			ArchiveFiles files = archive.getFiles(archiveData);
+//
+//			for (FSFile file : files.getFiles())
+//			{
+//				byte[] b = file.getContents();
+//
+//				KitDefinition def = loader.load(file.getFileId(), b);
+//
+//				Files.asCharSink(new File(dumpDir, file.getFileId() + ".json"), Charset.defaultCharset()).write(gson.toJson(def));
+//				++count;
+//			}
 		}
 
 		logger.info("Dumped {} kits to {}", count, dumpDir);

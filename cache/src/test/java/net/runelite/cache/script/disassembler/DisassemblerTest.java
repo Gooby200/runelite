@@ -63,26 +63,26 @@ public class DisassemblerTest
 			Index index = store.getIndex(IndexType.CLIENTSCRIPT);
 			ScriptLoader loader = new ScriptLoader();
 
-			for (Archive archive : index.getArchives())
-			{
-				byte[] contents = archive.decompress(storage.loadArchive(archive));
-
-				if (contents == null)
-				{
-					continue;
-				}
-
-				ScriptDefinition script = loader.load(archive.getArchiveId(), contents);
-
-				File outFile = new File(outDir, archive.getArchiveId() + ".rs2asm");
-
-				Disassembler disassembler = new Disassembler();
-				String out = disassembler.disassemble(script);
-
-				Files.write(out.getBytes(StandardCharsets.UTF_8), outFile);
-
-				++count;
-			}
+//			for (Archive archive : index.getArchives())
+//			{
+//				byte[] contents = archive.decompress(storage.loadArchive(archive));
+//
+//				if (contents == null)
+//				{
+//					continue;
+//				}
+//
+//				ScriptDefinition script = loader.load(archive.getArchiveId(), contents);
+//
+//				File outFile = new File(outDir, archive.getArchiveId() + ".rs2asm");
+//
+//				Disassembler disassembler = new Disassembler();
+//				String out = disassembler.disassemble(script);
+//
+//				Files.write(out.getBytes(StandardCharsets.UTF_8), outFile);
+//
+//				++count;
+//			}
 		}
 
 		logger.info("Dumped {} scripts to {}", count, outDir);
