@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Adam <Adam@sigterm.info>
+ * Copyright (c) 2025, Adam <Adam@sigterm.info>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -22,43 +22,19 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-grammar rs2asm;
+package net.runelite.client.events;
 
-prog: NEWLINE* (header NEWLINE+)* (line NEWLINE+)+ ;
+import java.util.Collection;
+import lombok.Value;
+import net.runelite.api.NPCComposition;
+import net.runelite.client.game.ItemStack;
 
-header: id | int_arg_count | obj_arg_count ;
-
-id: '.id ' id_value ;
-int_arg_count: '.int_arg_count ' int_arg_value ;
-obj_arg_count: '.obj_arg_count ' obj_arg_value ;
-
-id_value: INT ;
-int_arg_value: INT ;
-obj_arg_value: INT ;
-
-line: instruction | label | switch_lookup ;
-instruction: instruction_name instruction_operand ;
-label: IDENTIFIER ':' ;
-
-instruction_name: name_string | name_opcode ;
-name_string: IDENTIFIER ;
-name_opcode: INT ;
-
-instruction_operand: operand_int | operand_qstring | operand_label | operand_symbol | ;
-operand_int: INT ;
-operand_qstring: QSTRING ;
-operand_label: IDENTIFIER ;
-operand_symbol: SYMBOL ;
-
-switch_lookup: switch_key ':' switch_value ;
-switch_key: INT ;
-switch_value: IDENTIFIER ;
-
-NEWLINE: ( '\r' | '\n' )+ ;
-INT: '-'? [0-9]+ ;
-QSTRING: '"' (~('"' | '\\' | '\r' | '\n') | '\\' ('"' | '\\'))* '"' ;
-IDENTIFIER: [a-zA-Z0-9_]+ ;
-SYMBOL: ':' [a-zA-Z0-9_:]+ ;
-COMMENT: ';' ~( '\r' | '\n' )* -> channel(HIDDEN) ;
-
-WS: (' ' | '\t')+ -> channel(HIDDEN) ;
+/**
+ * NPC loot received from the in-game loot tracker.
+ */
+@Value
+public class ServerNpcLoot
+{
+	NPCComposition composition;
+	Collection<ItemStack> items;
+}
