@@ -116,7 +116,7 @@ public interface Client extends OAuthApi, GameEngine
 	 * @param sender the sender/channel name
 	 * @return the message node for the message
 	 */
-	MessageNode addChatMessage(ChatMessageType type, String name, String message, String sender);
+	MessageNode addChatMessage(ChatMessageType type, @Nonnull String name, String message, String sender);
 
 	/**
 	 * Adds a new chat message to the chatbox.
@@ -128,7 +128,7 @@ public interface Client extends OAuthApi, GameEngine
 	 * @param postEvent whether to post the chat message event
 	 * @return the message node for the message
 	 */
-	MessageNode addChatMessage(ChatMessageType type, String name, String message, String sender, boolean postEvent);
+	MessageNode addChatMessage(ChatMessageType type, @Nonnull String name, String message, String sender, boolean postEvent);
 
 	/**
 	 * Gets the current game state.
@@ -901,6 +901,14 @@ public interface Client extends OAuthApi, GameEngine
 	 * @return the widget flags table
 	 */
 	HashTable<WidgetConfigNode> getWidgetFlags();
+
+	/**
+	 * Get the widget config for a given widget
+	 * @param w
+	 * @return
+	 */
+	@Nullable
+	WidgetConfigNode getWidgetConfig(Widget w);
 
 	/**
 	 * Gets the widget node component table.
