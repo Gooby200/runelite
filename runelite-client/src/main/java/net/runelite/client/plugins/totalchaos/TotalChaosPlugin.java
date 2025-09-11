@@ -53,7 +53,7 @@ public class TotalChaosPlugin extends Plugin {
     @Subscribe
     public void onGameTick(GameTick tick) {
         NPC aubury = core.findNearestNpc("Aubury");
-        if (aubury != null && aubury.getComposition().isVisible()) {
+        if (aubury != null && aubury.getComposition().isInteractible()) {
             Executors.newSingleThreadExecutor().submit(() -> {
                 //core.trade
             });
